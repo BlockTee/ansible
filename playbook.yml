@@ -1,0 +1,55 @@
+---
+
+- name: Simple playbook Mykola
+  hosts: all
+  vars:
+   user: "Mykola"
+   password: "1234"
+
+  tasks:
+
+   - name: Install Nginx
+     package:
+      name:
+       - nginx
+      state: latest
+      update_cache: true
+
+   - name: Add Docker GPG apt Key
+     apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+   - name: Add Docker Repository
+     apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+   - name: Update apt and install docker-ce
+     apt:
+      name: docker-ce
+      state: latest
+      update_cache: true
+
+   - name: Ensure docker deamon is running
+     service:
+      name: docker
+      state: started
+     become: true
+
+   - name: Adding user {{ user  }}
+     user:
+        name={{ user }}
+        groups=docker
+        shell=/bin/bash
+        password=${password}
+        append=yes
+
+   - name: echo
+     shell:
+      cmd: nginx -v
+     register: nginx_version
+
+   - name: Nginx version
+     debug:
+      msg: '{{ nginx_version.stderr | upper }}'
